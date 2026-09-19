@@ -1,6 +1,6 @@
 # Process considerations
 
-- The central unsolved problem: prompting AI to describe work at the functionality layer — the two failure directions are bloat, and assuming the reader already knows the area
+- The central problem was prompting AI to describe work at the functionality layer — the two failure directions are bloat, and assuming the reader already knows the area; the authorship inversion relocates it (→ [analysis](../analysis.md#what-the-framing-actually-changes)): the human writes the tree, and the register problem survives only in the brownfield seed and in the proposals the author ratifies
 - Comprehension remains the goal throughout; it becomes implicit in managing canonical + planning docs well
 - Decide the finishing line up-front — a shipped product that lands well — and filter every scoping decision through it
   - the route emerges through probes; the destination doesn't
@@ -10,7 +10,7 @@
 - [Capture every confirmed win before moving on](#capture-every-confirmed-win)
 - [Apply the principles of the target functionality as part of the process](#apply-the-principles-of-the-target-functionality)
   - practising them needs no implementation, and stress-tests them before any tooling exists
-- Research is continual, not a phase — external findings distilled into routable references (→ [2-research](../2-research-into-knowledge-representations/considerations.md))
+- Research is continual, not a phase — external findings distilled into routable references in the quarry corpus (private); what it has settled so far is digested in [evidence](../evidence.md)
   - motive, reuse: working patterns already exist in the wild — find them rather than reinvent them
   - motive, landing: see what exists and what people are writing about, then decide how this ships
     - e.g. the "comprehension debt" discourse resonates with the mission — comprehension and plan-verification/refinement speed is the main bottleneck once coding agents arrive
@@ -29,8 +29,8 @@ How each probe round is set up, judged, and closed.
 - Adopt strong-prior ideas by decision; spend feedback time only on genuinely open questions
 - Test docs by use, not style: can a context-free reader answer capability questions from the doc; can an agent plan the right change from the doc alone
 - After each feedback round: fold the verdicts into rules/examples, regenerate the same source, advance only when it comes back clean
-- The loop is proven once already ([plandoc responder-brevity](../../_archive/cdoc-interactive/01.4-responder-brevity.md)): quote the bad output → root cause → template + ban-list fix → re-run the same round
-- Full probe programme with sequencing and evidence: [functionality-docs](../../functionality-docs/README.md)
+- The loop is proven once already (the plandoc responder-brevity fix, private): quote the bad output → root cause → template + ban-list fix → re-run the same round
+- The functionality-docs probe programme (private) holds the full sequencing and evidence; it was built on the pre-inversion premise — AI writes, the human gives typed feedback — and is rescoped to its read-side harnesses, checker evals, and a test of the catalog as seed spec (→ [analysis](../analysis.md#of-overstory-in-light-of-it))
 
 ## Capture every confirmed win
 
@@ -51,6 +51,7 @@ The principles in question are those embedded in the functionality this project 
 ### Hierarchical functionality description
 
 - These considerations files use the functionality-tree form from [3-canonical-docs](../3-canonical-docs/considerations.md): simple-as-possible bullets, each able to link to a sub-heading expanding its sub-functionality (this section is the form in use)
+  - the form, not the vocabulary: these files are design statements, not capability statements bound to code, so they exercise the shape of the tree and nothing about binding — the catalog is where the vocabulary gets its first test (→ [analysis](../analysis.md#simple-way-forward))
   - sub-bullets only for notes that would otherwise be lost, such as subtle or non-obvious motivations
   - until the prompting problem is solved, prefer primitive representations (bullet trees) over prose
   - the tree is imposed; relationships that escape it become sparse cross-links (→ [tree, not graph](../3-canonical-docs/considerations.md#tree-not-graph))

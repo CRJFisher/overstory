@@ -15,7 +15,7 @@
 The first shipped product, and the sequencing anchor: consolidation waves start after its release.
 
 - Finish docs 10–16 through release before the consolidation waves
-- Delivery follows the ratified spec ([spec-delivery](../../cairn/spec-delivery.md)): a skill distributed as a Claude Code plugin from a public repo
+- Delivery follows the ratified spec (cairn's spec-delivery, private): a skill distributed as a Claude Code plugin from a public repo
 - worktree-hydration stays an active plan in its role as the pilot execution target
 - The dispatch eval set mandated by doc 15 is an early consumer of the shared eval home (→ [eval tooling](#eval-tooling-has-one-home))
 
@@ -47,6 +47,7 @@ Kept healthy, not driven: its tooling migrates out and its visual surface waits.
 - The eval stack migrates out (→ [eval tooling](#eval-tooling-has-one-home)); code-charter consumes it back, never forks
 - drift-sync keeps maintaining the diagram store as-is; whether it shares a substrate with the canonical-docs sync is decided later (→ [claude-config](#claude-config-stays-consistent))
 - The visual front-end (graph store, webview, vscode extension) comes later or never
+- Its ideas and its reconcile engine are inputs to overstory's binding-and-liveness question — the engine re-derives on rename rather than preserving an authored link, which bounds what it can supply; the vehicle stays parked (→ [3-canonical-docs](../3-canonical-docs/considerations.md#binding-and-liveness))
 
 ## Ariadne proves the tooling in anger
 

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drift sync lifecycle</title>
+<style>
+  :root {
+    --ink: #1f2933; --muted: #52606d; --line: #d9dee3; --bg: #fbfbfa; --panel: #ffffff;
+    --accent: #2f6f8f; --warn-bg: #fff6e5; --warn-line: #e5b866; --ok-bg: #eef7f0; --ok-line: #8cc5a0; --bad-bg: #fdeeee; --bad-line: #e39a9a;
+  }
+  html { color-scheme: light; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 2rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
+  h2 { font-size: 1.35rem; margin: 3rem 0 .5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+  h3 { font-size: 1.05rem; margin: 1.5rem 0 .25rem; }
+  p { margin: .5rem 0 .75rem; max-width: 76ch; }
+  .lede { color: var(--muted); font-size: 1.05rem; max-width: 80ch; }
+  .chart { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 12px; margin: 1rem 0; overflow-x: auto; }
+  pre.mermaid { margin: 0; text-align: center; font-size: 15px; }
+  .note { border-left: 4px solid var(--accent); background: var(--panel); padding: .6rem 1rem; margin: 1rem 0; max-width: 80ch; }
+  .fragile { border-left-color: var(--warn-line); background: var(--warn-bg); }
+  .verdict { border-left-color: var(--accent); }
+  .legend { display: flex; gap: 1.25rem; flex-wrap: wrap; font-size: .9rem; color: var(--muted); margin: .25rem 0 1rem; }
+  .legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1px solid var(--line); }
+  .legend .mech::before { background: var(--ok-bg); border-color: var(--ok-line); }
+  .legend .judg::before { background: var(--warn-bg); border-color: var(--warn-line); }
+  .legend .hum::before { background: #eef2fb; border-color: #9fb3e6; }
+  .legend .fail::before { background: var(--bad-bg); border-color: var(--bad-line); }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; margin: 1rem 0; }
+  th, td { border: 1px solid var(--line); padding: .45rem .6rem; text-align: left; vertical-align: top; }
+  th { background: #f1f4f6; font-weight: 600; }
+  td.low { background: var(--ok-bg); } td.mid { background: var(--warn-bg); } td.high { background: var(--bad-bg); }
+  .tablewrap { overflow-x: auto; }
+  ul { max-width: 80ch; } li { margin: .3rem 0; }
+  .small { font-size: .88rem; color: var(--muted); }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; background: #f1f4f6; padding: 0 .25em; border-radius: 3px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Drift sync lifecycle</h1>
+<p class="lede">How a human-authored functionality tree, its bindings to code, and the code itself are kept in agreement as any of the three changes. Each chart shows one part of the loop; the colour of a step says who decides. The last two sections say where the loop is mechanical, where it rests on judgment, and whether that makes it precarious.</p>
+<div class="legend"><span class="mech">mechanical, no model in the loop</span><span class="judg">judgment, drafted by an agent</span><span class="hum">the author decides</span><span class="fail">failure mode</span></div>
+<p class="small">Diagrams render with mermaid from jsdelivr; the first open needs a network connection. If a diagram does not render, its source is shown in place.</p>
+
+<h2 id="loop">1. The loop at a glance</h2>
+<p>Three things change: the code, the tree, and plan branches that carry both. Whatever changes, the same loop runs. Detection is deterministic and produces a set of suspect nodes, each with its reason. An agent drafts one proposal per suspect. Proposals surface where the author already is, and the author's verdict is the only thing that changes the tree's words. Every verdict is kept as a golden case, so detection and drafting are tuned by the record rather than re-argued.</p>
+<div class="chart"><pre class="mermaid">
+flowchart TD
+  subgraph sources["Change arrives from three directions"]
+    code["Code diff<br/>human or agent, any branch"]
+    tree["Tree edit<br/>author, in markdown"]
+    plan["Plan branch<br/>tree diff plus code"]
+  end
+  detect["Deterministic detection<br/>dead bindings, touched bindings,<br/>fingerprint changes, coverage gaps"]
+  suspects["Suspect set<br/>each node with its reason"]
+  judge["Judgment<br/>an agent drafts one proposal per suspect"]
+  queue["Proposal queue<br/>surfaced at the edit or in the PR"]
+  author{"Author ratifies"}
+  update["Tree words and bindings updated<br/>the tool rewrites targets, never words"]
+  golden["Verdict kept as a golden case"]
+  code --> detect
+  tree --> detect
+  plan --> detect
+  detect --> suspects --> judge --> queue --> author
+  author -->|"accept or edit"| update
+  author -->|"reject"| golden
+  update --> golden
+  golden -.->|"tunes detection and drafting"| detect
+  classDef mech fill:#eef7f0,stroke:#8cc5a0,color:#1f2933;
+  classDef judg fill:#fff6e5,stroke:#e5b866,color:#1f2933;
+  classDef hum fill:#eef2fb,stroke:#9fb3e6,color:#1f2933;
+  class detect,suspects,update,golden mech;
+  class judge,queue judg;
+  class author hum;
+</pre></div>
+<div class="note">The invariant that makes the loop safe to automate: <strong>the tool rewrites link targets, never node text</strong>. Anything mechanical can be applied without asking. Anything that touches the author's words is a proposal.</div>
+
+<h2 id="code">2. Code changed: routing a diff to the tree</h2>
+<p>This is the direction with no human who already knows the answer, so it carries the most machinery. The first three questions are mechanical. What each branch ends in is the interesting part: a dead binding is a fact, but whether a capability is <em>still true</em> after its code was edited is not decidable from the diff. The loop bounds <em>where</em> to look and leaves <em>whether</em> to judgment.</p>
+<div class="chart"><pre class="mermaid">
+flowchart TD
+  diff["Code diff lands"] --> touched{"Touches a bound symbol?"}
+  touched -->|"symbol gone or renamed"| dead["Binding dead<br/>a fact, not a guess"]
+  touched -->|"symbol edited"| suspect["Node suspect: behaviour may differ<br/>marked mechanically, resolved by judgment"]
+  touched -->|"no"| closure{"Reaches a bound symbol<br/>through the call graph<br/>within depth k?"}
+  closure -->|"yes"| suspect
+  closure -->|"no"| newsurface{"New entry point, route,<br/>flag, or test with no node?"}
+  newsurface -->|"yes"| gap["Coverage gap<br/>a new node is proposed;<br/>user-visibility is the judgment"]
+  newsurface -->|"no"| invisible["Invisible to the tree<br/>accepted by design"]
+  dead --> testbound{"Leaf bound to a test?"}
+  testbound -->|"yes"| ci["CI already answers:<br/>the test is missing or failing"]
+  testbound -->|"no"| retarget["Proposal: retarget to the likely<br/>successor symbol, or retire the node"]
+  suspect --> verdict["Proposal: keep, reword, or retire,<br/>with the diff hunk as evidence"]
+  ci --> queue["Proposal queue"]
+  retarget --> queue
+  verdict --> queue
+  gap --> queue
+  classDef mech fill:#eef7f0,stroke:#8cc5a0,color:#1f2933;
+  classDef judg fill:#fff6e5,stroke:#e5b866,color:#1f2933;
+  class touched,dead,closure,newsurface,invisible,testbound,ci mech;
+  class suspect,gap,retarget,verdict,queue judg;
+</pre></div>
+<div class="note fragile"><strong>Fragile point: the closure depth.</strong> Direct bindings miss a behaviour change in shared code two calls down. Full call-graph closure marks everything that depends on a utility module. Depth k is the precision dial of the whole loop: too wide and the author drowns in false suspects; too narrow and drift lands silently. A test-bound leaf sidesteps the dial, because the test exercises the closure for you.</div>
+
+<h2 id="tree">3. Tree changed: from an author's edit to built code</h2>
+<p>The author knows what they meant, so the machinery here is light: a fingerprint over the load-bearing text separates wording from functionality, and a functionality change becomes a plan by construction. The plan is not a second document. It is the tree edited on a branch, and the overlay is the diff. The branch may merge only when its nodes bind, so the canonical tree on the main branch never describes code that does not exist.</p>
+<div class="chart"><pre class="mermaid">
+flowchart TD
+  edit["Author edits the tree"] --> fp{"Load-bearing text changed?<br/>fingerprint over the capability statement,<br/>not notes or links"}
+  fp -->|"no"| wording["Wording or notes only<br/>nothing to do"]
+  fp -->|"node moved or split"| ids{"Stable node id in the file?"}
+  ids -->|"yes"| moved["Move detected; bindings follow"]
+  ids -->|"no"| readd["Reads as delete plus add<br/>bindings re-attached by hand"]
+  fp -->|"yes"| implies{"Implies a code change?<br/>the author says; a classifier may propose"}
+  implies -->|"no: the code already does this"| correct["Canonical correction<br/>bindings re-checked"]
+  implies -->|"yes"| planned["Node enters the planned state<br/>on a plan branch"]
+  planned --> overlay["Overlay is the tree diff on the branch"]
+  overlay --> lands["Code lands on the branch"]
+  lands --> live{"Binding resolves?<br/>test passes, if test-bound"}
+  live -->|"no"| lands
+  live -->|"yes"| built["Node built; the branch may merge<br/>graduation is gated on liveness"]
+  classDef mech fill:#eef7f0,stroke:#8cc5a0,color:#1f2933;
+  classDef judg fill:#fff6e5,stroke:#e5b866,color:#1f2933;
+  classDef hum fill:#eef2fb,stroke:#9fb3e6,color:#1f2933;
+  class fp,wording,ids,moved,readd,correct,overlay,live,built mech;
+  class implies,edit,planned,lands hum;
+</pre></div>
+<div class="note fragile"><strong>Fragile point: identity across restructuring.</strong> A git diff of a markdown outline cannot tell a moved node from a deleted one plus a new one. Without a stable id per node, every restructure breaks bindings and makes the overlay unreadable. With ids, the file carries machine-written marks the author must tolerate. This is one decision, and three features hang on it: the computed overlay, the metadata sidecar, and per-reader state.</div>
+
+<h2 id="node">4. A node's life</h2>
+<p>Every node is in exactly one of four states, and the transitions are the events from the two charts above. The state is the thing the overlay renders and the anti-rot sweep counts.</p>
+<div class="chart"><pre class="mermaid">
+stateDiagram-v2
+  [*] --> Planned: author writes a node the code does not yet satisfy
+  [*] --> Built: author writes a node and binds it to existing code
+  Planned --> Built: binding resolves and its test passes
+  Planned --> Retired: plan abandoned
+  Built --> Suspect: bound code edited, or binding dead
+  Suspect --> Built: author ratifies keep or reword
+  Suspect --> Retired: capability removed
+  Built --> Planned: author changes load-bearing text and the code must follow
+  Retired --> [*]
+</pre></div>
+<div class="note">A <strong>Suspect</strong> node is still rendered as true. Its truth is simply older than the code. How long nodes sit in Suspect is the one number that says whether the loop is working.</div>
+
+<h2 id="ratify">5. Ratification: the throughput constraint</h2>
+<p>Every direction ends at the same place. The mechanism removes the labour of noticing and drafting, not the labour of deciding. So the loop has a budget, and two ways to blow it: proposals that pile up unratified, and proposals accepted verbatim until the tree is no longer in the author's words.</p>
+<div class="chart"><pre class="mermaid">
+flowchart TD
+  queue["Proposal queue"] --> mechq{"Mechanical repair only?<br/>link retarget, dead cross-link"}
+  mechq -->|"yes"| auto["Auto-applied<br/>the mixed-authorship rule allows it"]
+  mechq -->|"no: touches words"| surface["Surfaced where the author already is:<br/>the PR, or the session's Stop hook"]
+  surface --> author{"Author"}
+  author -->|"accept"| verbatim["Applied verbatim<br/>counted: the AI-authored share rises"]
+  author -->|"edit"| edited["Applied in the author's words"]
+  author -->|"reject"| anti["Kept as a golden anti-case"]
+  author -->|"defer"| backlog["Backlog"]
+  backlog --> stale["Failure mode 1: stale in effect<br/>the tree is true as of its last ratification"]
+  verbatim --> creep["Failure mode 2: register creep<br/>the tree becomes AI-written by accretion"]
+  stale -.->|"mitigate"| m1["Rank by blast radius; batch at merge;<br/>a weekly budget the queue must fit"]
+  creep -.->|"mitigate"| m2["Proposals as minimal diffs to the author's words;<br/>measure the verbatim-accept share"]
+  classDef mech fill:#eef7f0,stroke:#8cc5a0,color:#1f2933;
+  classDef judg fill:#fff6e5,stroke:#e5b866,color:#1f2933;
+  classDef hum fill:#eef2fb,stroke:#9fb3e6,color:#1f2933;
+  classDef fail fill:#fdeeee,stroke:#e39a9a,color:#1f2933;
+  class mechq,auto,anti mech;
+  class queue,surface,m1,m2 judg;
+  class author,verbatim,edited,backlog hum;
+  class stale,creep fail;
+</pre></div>
+<div class="note fragile"><strong>Fragile point: the tree's truth is only as fresh as its last ratification.</strong> Nothing in the mechanism can make the author decide faster. What the mechanism can do is keep the queue small, keep each item one keystroke, and put it where the author is already looking. Whether that is enough is measurable before anything is built: replay a repo's recent commits through the detection rules by hand and count suspects per commit.</div>
+
+<h2 id="binding">6. What the binding primitive changes</h2>
+<p>The hardest question in the whole loop is "is this node still true?". How a leaf is bound decides who can answer it.</p>
+<div class="chart"><pre class="mermaid">
+flowchart LR
+  q["Is this node still true<br/>after its code changed?"] --> how{"How is the leaf bound?"}
+  how -->|"symbol string, path plus name"| sym["Answerable only by reading the diff<br/>judgment every time;<br/>and the link dies on rename"]
+  how -->|"anchor comment in source"| anc["Same judgment for truth;<br/>rename and move stop costing anything"]
+  how -->|"named test"| tst["Answered by CI<br/>judgment only when the test itself changes"]
+  tst --> cost["The cost: functionality without a test is unbound"]
+  classDef mech fill:#eef7f0,stroke:#8cc5a0,color:#1f2933;
+  classDef judg fill:#fff6e5,stroke:#e5b866,color:#1f2933;
+  class tst mech;
+  class sym,anc,cost judg;
+</pre></div>
+
+<h2 id="map">7. Where the loop is mechanical and where it rests on judgment</h2>
+<p>Every class of drift the lifecycle can produce, with how it is detected, how it is repaired, and how precarious that leaves it. Green rows are solved by construction. Amber rows depend on a decision not yet made. Red rows are the semantic gap: a capability statement's truth is not decidable from code, so the loop can bound where to look but must leave the answer to judgment.</p>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Drift class</th><th>Detected by</th><th>Repaired by</th><th>Precarious?</th><th>Why, and what moves it</th></tr></thead>
+<tbody>
+<tr><td>Bound symbol renamed or moved</td><td>Resolver: binding fails</td><td>Judgment picks the successor; none needed with an in-source anchor or a test binding</td><td class="low">Low</td><td>Detection is a fact. Repair cost is set entirely by the binding primitive.</td></tr>
+<tr><td>Bound code's behaviour changed</td><td>Touched-binding mark, over-approximate</td><td>Judgment: keep, reword, retire; CI if test-bound</td><td class="high">High</td><td>The semantic gap. Every edit to bound code is a suspect; most are innocent. Test binding converts the question to a check.</td></tr>
+<tr><td>Change in unbound shared code</td><td>Call-graph closure to depth k</td><td>Judgment</td><td class="high">High</td><td>Blast radius. Depth k trades false suspects against silent misses. Tests exercise the closure for free.</td></tr>
+<tr><td>New functionality with no node</td><td>Heuristics: new entry points, routes, flags, tests without a binding</td><td>Judgment on user-visibility; proposed node</td><td class="high">High</td><td>Completeness. The tree cannot know what it does not say. Ariadne's entry-point classification is the best available signal.</td></tr>
+<tr><td>Bound code deleted</td><td>Resolver: binding fails</td><td>Judgment: capability removed, or moved</td><td class="mid">Medium</td><td>Detection is a fact; the verdict needs the diff's intent, which the commit message often carries.</td></tr>
+<tr><td>Tree wording edit</td><td>Fingerprint over load-bearing text unchanged</td><td>None</td><td class="low">Low</td><td>Requires deciding which fields are load-bearing, which is the node-vocabulary decision.</td></tr>
+<tr><td>Tree functionality edit</td><td>Fingerprint changed</td><td>Becomes a plan node by construction</td><td class="low">Low</td><td>The author knows; the tool only needs to render it.</td></tr>
+<tr><td>Node moved, split, or merged</td><td>Move-aware diff, needs stable ids</td><td>Bindings follow the id; by hand without one</td><td class="mid">Medium</td><td>Hangs on the id decision.</td></tr>
+<tr><td>Plan merged before its code exists</td><td>Liveness gate at merge</td><td>Merge blocked</td><td class="low">Low</td><td>A rule, not a mechanism: a branch merges when its nodes bind.</td></tr>
+<tr><td>Code landed with no plan</td><td>The code-direction rows above</td><td>As above</td><td class="low">Low</td><td>Hotfixes and agent chat are the normal case; the reverse direction exists for them.</td></tr>
+<tr><td>Cross-link or lens rot</td><td>Anchor check</td><td>Mechanical</td><td class="low">Low</td><td>Solved.</td></tr>
+<tr><td>Concurrent tree edits on two branches</td><td>Git merge</td><td>Text conflicts by hand; ids keep structure mergeable</td><td class="mid">Medium</td><td>Ordinary markdown merging, made worse or better by the id decision.</td></tr>
+<tr><td>Node at the wrong level, or two nodes overlapping</td><td>Judgment only, on a periodic sweep</td><td>Author restructures</td><td class="mid">Medium</td><td>Not drift against code; tree quality. Cockburn's per-level tests give the sweep a rubric.</td></tr>
+<tr><td>Ratification backlog</td><td>Queue age; time in Suspect</td><td>Process: budget, ranking, surfacing</td><td class="mid">Medium</td><td>The throughput constraint. Measurable by replaying history before any build.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="verdict">8. Verdict: is the syncing lifecycle precarious?</h2>
+<div class="note verdict">
+<p><strong>It is mechanical wherever the question is "does this still exist", and it rests on judgment wherever the question is "is this still true".</strong> The three red rows are one difficulty, the semantic gap, and the loop handles it the only way it can: bound <em>where</em> to look deterministically, draft the answer, and let the author decide. That is sound. It is precarious only in the sense that its precision is a dial, not a guarantee.</p>
+<ul>
+<li><strong>The dial is closure depth,</strong> and it decides both failure modes at once. It can be tuned from evidence rather than taste: replay a real repo's history, count suspects per commit at each depth, and count the drifts each depth would have missed.</li>
+<li><strong>The one lever that moves the boundary is test binding.</strong> Where a capability names its test, "still true?" becomes "does CI pass?", renames stop mattering, and the closure is exercised for free. Its cost is honest: functionality without a test is unbound, and the tree says so.</li>
+<li><strong>Completeness is the weakest link,</strong> because no binding can detect what the tree never said. Entry-point and test heuristics catch the common case; a periodic sweep is the backstop.</li>
+<li><strong>Ratification is the throughput constraint.</strong> The mechanism removes noticing and drafting; deciding stays with the author. The tree is exactly as true as its last ratification, and the design's job is to keep the queue inside a budget: apply the mechanical, rank the rest, and surface it at the edit.</li>
+<li><strong>Why this is not the decay the literature measured.</strong> Every population in that research updated by hand, far from the code, with nothing proposing the repair. Here detection is mechanical, the draft is produced at the edit, and the human's part shrinks to a verdict. The research's conditions for survival, an update that is small, adjacent, and rides an existing step, are met by construction, so long as the verdict itself stays cheap. That is the number to measure first.</li>
+</ul>
+</div>
+
+<h2 id="first">9. What to build first, given all this</h2>
+<ul>
+<li><strong>The deterministic layer alone,</strong> with no agent: resolve bindings, mark touched bindings to depth k, flag unbound entry points and tests, check anchors. It is small, it has ground truth, and it produces the two numbers the whole design turns on: suspects per commit, and drifts missed.</li>
+<li><strong>Replay before you build.</strong> Run those rules by hand over the catalog repo's last thirty commits. If the suspect count per commit is a handful and the misses are rare, the loop is not precarious. If either number is bad, the fix is in the binding primitive or the depth, and it is better learned on paper.</li>
+<li><strong>Bind the catalog three ways,</strong> symbol, anchor, and test, on one subject, so the primitive is chosen from the replay rather than argued.</li>
+</ul>
+
+</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true, curve: 'basis' } });
+</script>
+</body>
+</html>

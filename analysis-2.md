@@ -1,6 +1,6 @@
 # Analysis 2 — typed statements, session capture, and reader state
 
-Discussion capture (2026-08-25): evaluating four new thoughts against the corpus — multiple kinds of statement beyond functionality, session analysers mining the user's own inputs, a markdown + meta.json source of truth, and per-reader comprehension tracking. Companion reading: [analysis](analysis.md), [3-canonical-docs](3-canonical-docs/considerations.md), [question register](2-research-into-knowledge-representations/question-register.md).
+Discussion capture (2026-08-25): evaluating four new thoughts against the corpus — multiple kinds of statement beyond functionality, session analysers mining the user's own inputs, a markdown + meta.json source of truth, and per-reader comprehension tracking. Companion reading: [analysis](analysis.md), [3-canonical-docs](3-canonical-docs/considerations.md), the question register (private corpus; digested in [evidence](evidence.md)).
 
 ## The thoughts, decomposed
 
@@ -67,8 +67,8 @@ Recommendation: statement kinds inside the tree, concerns for the per-reader axi
 - [3-canonical-docs](3-canonical-docs/considerations.md): the capability-only bullet becomes a spine claim; add typed attachments and kind-as-lens; add session capture as an intake consideration; note meta.json as the G3.A5-conditional candidate
 - [0-process](0-process/considerations.md): "comprehension … becomes implicit" weakens — reader state would make comprehension explicit product functionality; the comprehension-debt line under research motives gains that note
 - [4-planning-doc](4-planning-doc/considerations.md): one line — a reader-state overlay is a further overlay type, explicitly deferred
-- [question register](2-research-into-knowledge-representations/question-register.md): candidate Q12 session capture (utterance → classified statement → proposed tree edit; prior art: intent mining from developer conversations, commit-intent classification) and candidate Q13 reader state (evidence, storage, rendering; prior art: degree-of-knowledge models — Fritz & Murphy's DOK, Mylyn DOI — and knowledge tracing / spaced repetition); both deferred behind G1–G3
-- [context.md](2-research-into-knowledge-representations/context.md) and the premise sentence stand unchanged until the above is ratified
+- question register (private corpus): candidate Q12 session capture (utterance → classified statement → proposed tree edit; prior art: intent mining from developer conversations, commit-intent classification) and candidate Q13 reader state (evidence, storage, rendering; prior art: degree-of-knowledge models — Fritz & Murphy's DOK, Mylyn DOI — and knowledge tracing / spaced repetition); both deferred behind G1–G3
+- the corpus's context paragraph (private) and the premise sentence stand unchanged until the above is ratified
 - [todo](todo.md) and sequencing: unchanged
 
 ## Open questions
